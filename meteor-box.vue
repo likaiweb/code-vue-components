@@ -63,7 +63,7 @@
         position: absolute;
         bottom: 0;
         left: 0;
-        height: auto;
+        height: 100%;
         width: 100%;
       }
       .shooting-star {
@@ -128,7 +128,7 @@
     // opacity: 0;
   }
   100% {
-    // opacity: 0;
+     opacity: 0;
     top: 100%;
     left: 10%;
   }

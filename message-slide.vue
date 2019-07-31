@@ -8,11 +8,13 @@
         通知内容123456789啊啊啊啊啊啊啊1234567
         通知内容123456789啊啊啊啊啊啊啊1234567
     </van-notice-bar>
+
 </template>
 
 <script>
     export default {
         name: "message-slide"
+
     }
 </script>
 

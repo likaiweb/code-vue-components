@@ -12,7 +12,7 @@
         </div>
         <!-- 子部门 -->
         <div class="childen" v-show="v.open||v.open===undefined">
-          <dep-tree :parentId="v.deptId" @itemChange="itemChange" :isClick="isClick" :isSelectDep="v.isSelectDep"  @itemClick="itemClick" @depChange="depChange"></dep-tree>
+          <dep-tree :parentId="v.deptId" :selectData="selectData" :data="data" @itemChange="itemChange" :isClick="isClick" :isSelectDep="v.isSelectDep"  @itemClick="itemClick" @depChange="depChange"></dep-tree>
         </div>
       </div>
     </van-checkbox-group>
@@ -20,8 +20,9 @@
     <van-checkbox-group v-model="result">
       <section>
         <div class="user-list flex align-center" v-for="(val,index) in userData" :key="index"
-          @click="itemClick(val)">
+          @click="itemClick(val,index)">
           <van-checkbox v-if="!isClick" :name="val.workUserId"></van-checkbox>
+          <van-icon name="success" color = '#273385' v-if="val.isShowIcon" size = '16' />
           <van-image
           width="0.8rem"
           height="0.8rem"
@@ -31,6 +32,7 @@
             <div class="name">{{val.name}}</div>
             <div class="pos">{{val.position||'无职位'}}</div>
           </div>
+
         </div>
       </section>
     </van-checkbox-group>
@@ -42,13 +44,15 @@
  * parentId  // 父节点id
  * isClick  // 是否点击事件
  * isSelectDep  // 是否选中当前节点
+ * data  // 所有部门人员信息
+ * selectData  // 选中人员
  * @itemChange  // 人员改变事件
  * @depChange  // 部门改变事件
  */
 import {$getDeptList,$getUserListByDept} from '@/api/main/index'
   export default {
     name:'dep-tree',
-    props:['parentId','isClick','isSelectDep'],
+    props:['parentId','isClick','isSelectDep','data','selectData'],
     data(){
       return {
         // 人员
@@ -60,7 +64,7 @@ import {$getDeptList,$getUserListByDept} from '@/api/main/index'
         // 部门
         depData:[],
         depResult:[],
-        sonDepArr:[]
+        depFlag:false,
       }
     },
     watch:{
@@ -90,14 +94,47 @@ import {$getDeptList,$getUserListByDept} from '@/api/main/index'
       }
     },
     created(){
-      this.getDeptList();
+      // 部门数据处理
+      this.depData=this.data.filter(v=>v.parentId==this.parentId);
+      this.depData.forEach((v,i)=>{
+        this.$set(this.depData[i],'open',v.parentId?false:true);
+        this.$set(this.depData[i],'isSelectDep',this.isSelectDep);
+        this.$set(this.sonArr,i,{
+          id:v.deptId,
+          arr:[]
+        })
+      })
+      // 人员数据处理
       if(this.parentId){
-        this.getUserListByDept();
+        this.data.forEach(v=>{
+          if(v.deptId==this.parentId){
+            this.userData=v.workUserVOList;
+          }
+        })
+        this.userData.forEach((item,i)=>{
+          this.$set(this.userData[i],"isShowIcon",false);
+          // 回显
+          if(this.selectData&&this.selectData.length){
+            this.selectData.forEach(v=>{
+              if(v==item.workUserId){
+                this.result.push(v);
+              }
+            })
+          }
+        })
       }
     },
     methods:{
       // 人员子节点返回
       itemChange(v,id){
+        // 层级勾选
+        this.depData.forEach(val=>{
+          if(val.deptId==id&&v.length==val.workUserVOList.length&&v.length!=0){
+            if(this.depResult.indexOf(val.deptId)<0){
+              this.depResult.push(val.deptId);
+            }
+          }
+        })
         // 整合所有人员
         if(!this.sonArr.some(val=>val.id==id)){
           this.sonArr.push({
@@ -111,42 +148,30 @@ import {$getDeptList,$getUserListByDept} from '@/api/main/index'
             }
           })
         }
-        this.concatArr=this.sonArr.map(val=>val.arr).flat();
+        function flattenDeep(arr1) {
+          return arr1.reduce((acc, val) => Array.isArray(val) ? acc.concat(flattenDeep(val)) : acc.concat(val), []);
+        }
+        this.concatArr=flattenDeep(this.sonArr.map(val=>val.arr));
         this.$emit('itemChange',[...new Set([...this.result,...this.concatArr])]);
       },
       // 部门子节点返回，暂时无用
-      depChange(v){
-        this.sonDepArr=v;
-        this.$emit('depChange',[...new Set([...this.depResult,...this.sonDepArr])]);
-      },
-      // 获取部门树
-      async getDeptList(){
-        const data=await $getDeptList(this.parentId);
-        if(data&&data.code===0){
-          this.depData=data.data;
-          this.depData.forEach((v,i)=>{
-            this.$set(this.depData[i],'open',false);
-            this.$set(this.depData[i],'isSelectDep',this.isSelectDep);
-            this.$set(this.sonArr,i,{
-              id:v.deptId,
-              arr:[]
-            })
-          })
+      depChange(v,depFlag){
+        this.depFlag=depFlag;
+        let flag=false;
+        if(v.length==this.depData.length){
+          flag=true;
         }
-      },
-      // 获取部门下人员树
-      async getUserListByDept(){
-        const data=await $getUserListByDept({
-          wapFlag:1,
-          deptId:this.parentId
-        });
-        if(data&&data.code===0){
-          this.userData=data.page.list;
-        }
+        this.$emit('depChange',v,flag);
       },
       // 人员点击事件
-      itemClick(v){
+      itemClick(v,index){
         if(this.isClick){
+          this.userData.forEach((item,i)=>{
+            this.$set(this.userData[i],"isShowIcon",false)
+          })
+          if(this.userData[index]){
+            this.userData[index].isShowIcon = true
+          }
           this.$emit('itemClick',v);
         }
       }

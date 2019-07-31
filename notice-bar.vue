@@ -1,5 +1,5 @@
 <template>
-  <div class="notice-box flex justify-between align-center">
+  <div class="notice-bar flex justify-between align-center">
     <img
       class="icon notice-icon"
       :src="icons.notice">
@@ -16,13 +16,14 @@
           :text="v"
           color='#6c6c6c'
           background="#e8eafd"
+          @click="$emit('rightClick')"
         />
     </van-swipe-item>
     </van-swipe>
-    <img
+    <van-image
       class="icon arrow-icon"
       @click="$emit('rightClick')"
-      :src="icons.arrowRight">
+      :src="icons.arrowRight"></van-image>
   </div>
 </template>
 
@@ -35,12 +36,11 @@
 
 <style lang="less" scoped>
   // 公告
-  .notice-box {
+  .notice-bar {
     padding: 0 0.3rem;
     width: 100%;
     height: 0.9rem;
     background: #e8eafd;
-    margin: 0.2rem 0;
     .notice-icon {
       flex-shrink: 0;
     }

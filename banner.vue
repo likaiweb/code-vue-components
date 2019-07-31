@@ -1,9 +1,10 @@
 /*
- * @Author: likai 
- * @Date: 2019-05-30 16:53:39 
+ * @Author: likai
+ * @Date: 2019-05-30 16:53:39
  * @Last Modified by: likai
- * @Last Modified time: 2019-06-28 14:17:36
+ * @Last Modified time: 2019-06-28 15:17:32
  */
+
 <template>
   <div class="banner-box" v-if="data">
     <van-swipe
@@ -26,8 +27,8 @@
       </van-swipe-item>
     </van-swipe>
     <div class="dot-list flex flex justify-center align-center">
-      <div class="dot" 
-        :class="{'activeDot': activeBannerIndex == index}" 
+      <div class="dot"
+        :class="{'activeDot': activeBannerIndex == index}"
         v-for="(item,index) in data"
         :key="index"></div>
     </div>
@@ -61,7 +62,7 @@
 </script>
 
 <style lang="less" scoped>
-  
+
   // banner
   .banner-box {
     padding: 0.2rem 0 0;
@@ -69,7 +70,7 @@
     .item-box {
       width: 100%;
       .van-image{
-        border-radius: 0.12rem;
+        border-radius: 0.24rem;
         background: #fff;
         overflow: hidden;
       }

@@ -2,7 +2,7 @@
  * @Author: likai 
  * @Date: 2019-05-30 16:53:18 
  * @Last Modified by: likai
- * @Last Modified time: 2019-06-28 13:36:48
+ * @Last Modified time: 2019-07-25 10:57:53
  */
 <template>
   <div class="nav-bar" :class="theme">
@@ -49,18 +49,20 @@
   .nav-bar{
     width: 100%;
     height: 0.88rem;
-    position: sticky;
-    top: 0;
     .van-nav-bar{
       width: 100%;
       height: 0.88rem;
       line-height: 0.88rem;
       background: @theme-color;
       border: 0;
-      .van-nav-bar__title, .van-nav-bar__text{
+      .van-nav-bar__title{
         color:#fff;
         font-size: @title-size;
         font-weight: 600;
+      }
+      .van-nav-bar__text{
+        color:#fff;
+        font-size: @sub-title-size;
       }
        .van-icon{
          color: @left-color;

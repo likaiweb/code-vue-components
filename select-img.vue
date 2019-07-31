@@ -4,128 +4,116 @@
     <input
       type="file"
       @change="changeImage($event)">
+      <div v-show="cropperShow" class="cropperBox">
+        <div class="box_imageShow">
+          <vueCropper
+            class="cropper"
+            ref="cropper"
+            :img="option.img"
+            :info="false"
+            :outputSize="option.size"
+            :outputType="option.outputType"
+            :canScale="option.canScale"
+            :autoCrop="option.autoCrop"
+            :fixed="option.fixed"
+            :fixedNumber="option.fixedNumber"
+            :canMove="option.canMove"
+            :mode="option.mode"
+            :autoCropWidth="autoCropWidth"
+            :autoCropHeight="autoCropHeight"
+            :fixedBox="fixedBox"
+            >
+          </vueCropper>
+        </div>
+        <div class="box_operation flex align-center justify-between">
+          <button class="cancel" @click="exitCropper">取消</button>
+          <van-image
+          width="0.69rem"
+          height="0.69rem"
+          :src="leftIcon"
+           @click="rotateLeft"></van-image>
+          <van-image
+          width="0.69rem"
+          height="0.69rem"
+          :src="rightIcon"
+           @click="rotateRight"></van-image>
+          <button @click="sureCropper">确定</button>
+        </div>
+      </div>
   </div>
 </template>
 
 <script>
+
+import { $toolTip,$toolLoading,$toolClear } from '@/libs/utils';
 import { $uploadImg } from '@/api/components/selectImg';
-const canvas1 = document.createElement("canvas");
-const canvas2 = document.createElement("canvas");
-const ctx1 = canvas1.getContext("2d");
-const ctx2 = canvas2.getContext("2d");
-const maxSize = 200 * 1024;
 export default {
   name: "select-img",
+  props:['autoCropWidth','autoCropHeight','fixedBox'],
   data() {
-    return {};
+    return {
+      cropperShow:false,
+      leftIcon:require('@/assets/images/common/leftRotate.png'),
+      rightIcon:require('@/assets/images/common/rightRotate.png'),
+      option: {
+        img: '',
+        size: 0.5,
+        outputType: 'png',
+        canScale: true,
+        autoCrop: true,
+        fixed: true,
+        fixedNumber: [1.6,1],
+        canMove: true,
+        mode: '100% auto'
+      },
+      fileName:''
+    };
   },
-  created() {},
+  created() {
+
+  },
   methods: {
-    /**
-     * 上传图片
-     */
-    async uploadImg(file) {
+    changeImage(e){
+      let that=this;
+      this.fileName=new Date().getTime() +e.target.files[0].name;
+      let reader = new FileReader();
+      reader.onload = function (evt) {
+          var replaceSrc = evt.target.result;
+          that.cropperShow=true;
+          that.option.img = evt.target.result
+      }
+      reader.readAsDataURL(e.target.files[0]);
+      e.srcElement.value = "";
+    },
+    sureCropper() {
+      var that = this;
+      this.$refs.cropper.getCropData((data) => {
+        let file=that.dataURLtoFile(data,this.fileName);
+        that.uploadImg(file)
+        $toolLoading();
+        this.cropperShow=false;
+      })
+    },
+     async uploadImg(file) {
       let fileForm = new FormData();
       fileForm.append('file', file);
-      const resData = await $uploadImg(fileForm);
-      if(resData&&resData.code === 0) {
-        this.$emit('selectOver', resData.url);
+      const data = await $uploadImg(fileForm);
+      $toolClear();
+      if(data&&data.code === 0) {
+        this.$emit('selectOver', data.url);
+      }else{
+        $toolTip('图片过大，请重新选择！');
       }
-      
     },
-
-
-    // 选择图片
-    changeImage(event) {
-      this.readFile(event.target.files[0]);
-      event.srcElement.value = ""; // 清除路径, 解决(删除后重新选择/多次选择同一图片)
+    rotateLeft() {
+      this.$refs.cropper.rotateLeft()
     },
-
-    // 读取文件
-    readFile(file) {
-      //创建读取文件的对象
-      const reader = new FileReader();
-      //创建文件读取相关的变量
-      let imgFile;
-      //为文件读取成功设置事件
-      reader.onload = e => {
-        imgFile = e.target.result; //获取当前文件的内容
-        var images = new Image();
-        images.src = imgFile;
-        images.onload = () => {
-          if (file.size > maxSize) {
-            imgFile = this.compress(images);
-          }
-          // const previewFile = imgFile;  // base64, 预览
-          const resultFile = this.dataURLtoFile(imgFile, file.name);  // 文件, 上传
-          
-          // this.$emit('selectOver', {previewFile, resultFile});
-          this.uploadImg(resultFile);
-          
-        };
-      };
-      //正式读取文件
-      reader.readAsDataURL(file);
+    rotateRight() {
+      this.$refs.cropper.rotateRight()
     },
-    // 压缩图片
-    compress(img) {
-      let initSize = img.src.length;
-      let width = img.width;
-      let height = img.height;
-      //如果图片大于四百万像素，计算压缩比并将大小压至400万以下
-      let ratio;
-      if ((ratio = (width * height) / 4000000) > 1) {
-        ratio = Math.sqrt(ratio);
-        width /= ratio;
-        height /= ratio;
-      } else {
-        ratio = 1;
-      }
-
-      canvas1.width = width;
-      canvas1.height = height;
-      //  铺底色
-      ctx1.fillStyle = "#fff";
-      ctx1.fillRect(0, 0, canvas1.width, canvas1.height);
-      //如果图片像素大于100万则使用瓦片绘制
-      let count;
-      if ((count = (width * height) / 1000000) > 1) {
-        count = ~~(Math.sqrt(count) + 1); //计算要分成多少块瓦片
-        //         计算每块瓦片的宽和高
-        let nw = ~~(width / count);
-        let nh = ~~(height / count);
-        canvas2.width = nw;
-        canvas2.height = nh;
-        for (let i = 0; i < count; i++) {
-          for (let j = 0; j < count; j++) {
-            ctx2.drawImage(
-              img,
-              i * nw * ratio,
-              j * nh * ratio,
-              nw * ratio,
-              nh * ratio,
-              0,
-              0,
-              nw,
-              nh
-            );
-            ctx1.drawImage(canvas2, i * nw, j * nh, nw, nh);
-          }
-        }
-      } else {
-        ctx1.drawImage(img, 0, 0, width, height);
-      }
-      //进行最小压缩
-      let ndata = canvas1.toDataURL("image/jpeg", 0.1);
-      console.log("压缩前：" + initSize);
-      console.log("压缩后：" + ndata.length);
-      console.log(
-        "压缩率：" + ~~((100 * (initSize - ndata.length)) / initSize) + "%"
-      );
-      canvas2.width = canvas2.height = canvas1.width = canvas1.height = 0;
-      return ndata;
+    exitCropper() {
+      this.cropperShow=false;
     },
-
     //将base64转换为文件
     dataURLtoFile(dataurl, filename) {
       let arr = dataurl.split(","),
@@ -147,7 +135,9 @@ export default {
   position: relative;
   width: 100%;
   height: 100%;
-
+  *{
+      -webkit-overflow-scrolling:auto;
+  }
   input {
     position: absolute;
     top: 0;
@@ -155,6 +145,42 @@ export default {
     width: 100%;
     height: 100%;
     opacity: 0;
+  }
+  .cropperBox{
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+    z-index: 99999;
+    background: rgba(0,0,0,0.5);
+    .box_imageShow{
+      width: 100%;
+      height: 100%;
+    }
+    .box_operation{
+      position: absolute;
+      padding: 0 0.2rem;
+      left: 0;
+      bottom: 1rem;
+      width: 100%;
+      height: 1rem;
+      button{
+        padding: 0.1rem 0.3rem;
+        margin: 0 0.2rem;
+        color: #fff;
+        font: initial;
+        font-size: @sub-title-size;
+        background: #66C51F;
+        border-radius: 0.1rem;
+      }
+      .van-image{
+        margin: 0 0.2rem;
+      }
+      .cancel{
+        background: transparent;
+      }
+    }
   }
 }
 </style>

@@ -2,7 +2,7 @@
  * @Author: likai 
  * @Date: 2019-06-06 15:55:56 
  * @Last Modified by: likai
- * @Last Modified time: 2019-06-27 14:49:57
+ * @Last Modified time: 2019-07-04 14:50:23
  */
 <template>
   <div class="pay-alert">
@@ -20,8 +20,8 @@
                 fit="contain"
                 :src="payIcons[0]"
               />
-              <label for="">礼品卡({{cardData.length}})</label>
-              <div class="over">{{blessMoney}}云豆</div>
+              <label for="">云豆支付</label>
+              <div v-if="!wxHide" class="over">{{userAccountMoney}}云豆</div>
               <van-radio name="1" />
             </van-cell>
             <van-cell class="card" v-if="!wxHide" clickable @click="radio = '2'">
@@ -44,7 +44,7 @@
 </template>
 
 <script>
-import {$myWelfareCard} from '@/api/market/myOrder'
+import {$queryWorkUserInfo} from '@/api/main/index'
   export default {
     name:'pay-alert',
     props:['payShow','allPrice','wxHide'],
@@ -52,7 +52,7 @@ import {$myWelfareCard} from '@/api/market/myOrder'
       return {
         myPayShow:this.payShow,
         radio:'1',  // 支付类型
-        cardData:[],  // 礼品卡信息
+        userAccountMoney:0,
         payIcons:[
           require("@/assets/images/market/my-order/icons-card.png"),
           require("@/assets/images/market/my-order/icons-wx.png")
@@ -67,33 +67,28 @@ import {$myWelfareCard} from '@/api/market/myOrder'
         this.$emit('showChange',val)
       }
     },
-    computed:{
-      // 云豆余额
-      blessMoney(){
-        return this.cardData.length?this.cardData.reduce((pre,cur)=>pre.blessMoney+cur.blessMoney):0;
-      }
-    },
     created(){
-      this.myWelfareCard();
+      this.queryWorkUserInfo();
     },
     methods:{
-      // 获取礼品卡
-      async myWelfareCard(){
-        const data=await $myWelfareCard();
-        if(data&&data.code===0){
-          this.cardData=data.data;
-        }
-      },
       paySubmit(){
         this.myPayShow=false;
         this.$emit('paySubmit',this.radio);
-      }
+      },
+      // 获取个人信息
+      async queryWorkUserInfo(){
+        const data=await $queryWorkUserInfo();
+        if(data&&data.code===0){
+          this.userAccountMoney=data.data.workUser.userMoney;
+        }
+      },
     }
   }
 </script>
 
 <style lang="less" scoped>
   .pay-alert{
+    -webkit-overflow-scrolling: auto;
     .van-action-sheet{
         border-radius: 0.2rem 0.2rem 0 0;
         .pay-box{

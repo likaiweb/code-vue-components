@@ -2,20 +2,19 @@
  * @Author: likai 
  * @Date: 2019-05-24 19:01:35 
  * @Last Modified by: likai
- * @Last Modified time: 2019-06-13 17:29:27
+ * @Last Modified time: 2019-07-15 13:06:16
  */
 <template>
   <div class="goods-order" :style="{'height':height||'1rem'}">
     <div class="order-list">
       <div class="order-item"
-        :class="{'order-item-select':orderIndex==i}"
-        :style="{'color':orderIndex==i?selectColor:''}"
+        :style="{'color':orderIndex==i?mySelectColor:''}"
         v-for="(v,i) in innerOrderList" 
         :key="i" 
         @click="setOrder(v,i)">
         <span>{{v.name}}</span>
         <div class="icon" v-if="v.order">
-          <span class="icon-ghy icontup"></span><span class="icon-ghy icontdown"></span>
+          <span class="icon-ghy icontup" :style="{'color':v.order=='desc'?mySelectColor:''}"></span><span class="icon-ghy icontdown" :style="{'color':v.order=='asc'?'#273385':''}"></span>
         </div>
       </div>
     </div>
@@ -42,7 +41,8 @@
           name:'上新',
           value:'new'
         }],
-        orderIndex:0
+        orderIndex:0,
+        mySelectColor:this.selectColor||'#273385'
       }
     },
     methods:{
@@ -79,6 +79,7 @@
           flex-direction: column;
           justify-content: center;
           line-height: 0.18rem;
+          color: @msg-time-color;
         }
       }
       .order-item-select{

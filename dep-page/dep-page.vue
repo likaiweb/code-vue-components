@@ -4,7 +4,7 @@
     <div class="search-box flex align-center justify-center">
       <van-search placeholder="请输入人员名称" shape="round" v-model="value" />
     </div>
-    <dep-tree class='dep-tree' v-if="!value" @depChange="depChange" :isClick="isClick" @itemClick="itemClick" @itemChange="itemChange"></dep-tree>
+    <dep-tree class='dep-tree' :selectData="selectData" :parentId='0' v-if="!value&&treeShow" :data="data" :isClick="isClick" @itemClick="itemClick" @itemChange="itemChange"></dep-tree>
     <div class="people-box" v-if="value">
       <van-checkbox-group v-model="userResult">
         <div class="people-item flex align-center" v-for="(v,i) in peopleData" :key="i"
@@ -27,21 +27,25 @@
 <script>
 /**
  * isClick  true 是否是人员点击，否则为勾选
+ * isAll  true 是否加载全部人员，否则为信息健全人员
+ * selectData  // 选中人员
  * @itemClick(v)  返回当前人员信息
  * @selectChange(v)  返回选中人员数组名单
  */
-import {$getUserListByDept} from '@/api/main/index'
+import {$getUserListByDept,$getTreeUsers} from '@/api/main/index'
+import {$toolLoading,$toolClear} from '@/libs/utils'
 import depTree from '@/components/dep-page/dep-tree.vue'
   export default {
     name:'dep-page',
     components:{depTree},
-    props:['isClick'],
+    props:['isClick','isAll','selectData'],
     data(){
       return {
         value:'',
         peopleData:[],  // 人员列表
-        data:[],  // 部门树
         userResult:[],  // 选中
+        treeShow:false,
+        data:[],  // 人员树参数
       }
     },
     watch:{
@@ -53,12 +57,35 @@ import depTree from '@/components/dep-page/dep-tree.vue'
       }
     },
     created(){
-      
+      this.getTreeUsers();
+      if(this.selectData&&this.selectData.length){
+        this.userResult=this.selectData;
+      }
     },
     methods: {
+      // 获取人员树
+      async getTreeUsers(){
+        let obj={};
+        if(!this.isAll){
+          obj.wapFlag=1;
+        }
+        $toolLoading();
+        const data=await $getTreeUsers(obj);
+        if(data&&data.code===0){
+          this.data=data.data;
+          this.treeShow=true;
+          $toolClear();
+        }
+      },
       // 获取人员
       async getUserListByDept(){
-        const data=await $getUserListByDept({wapFlag:1,name:this.value});
+        let obj={
+          name:this.value
+        }
+        if(!this.isAll){
+          obj.wapFlag=1;
+        }
+        const data=await $getUserListByDept(obj);
         if(data&&data.code===0){
           this.peopleData=data.page.list;
         }
@@ -67,11 +94,7 @@ import depTree from '@/components/dep-page/dep-tree.vue'
         // console.log(v)
         this.$emit('selectChange',v);
       },
-      depChange(v){
-        // console.log(v)
-      },
       itemClick(v){
-        // console.log(v)
         this.$emit('itemClick',v)
       }
     }
